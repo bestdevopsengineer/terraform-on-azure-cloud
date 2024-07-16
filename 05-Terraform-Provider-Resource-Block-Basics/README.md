@@ -4,6 +4,7 @@ description: Learn Key blocks of Terraform like Settings, Providers and Resource
 ---
 
 
+![image](https://github.com/user-attachments/assets/7b7089cb-3a2f-48fd-a67e-435de7e7d242)
 ## Step-01: Introduction
 ### Terraform Block
 - Understand about Terraform Block and its importance
