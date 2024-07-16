@@ -12,3 +12,18 @@ for create that resource the default time out is 1h30min
 
 *meta-argument:change the behavior of the resource
 count = 5 will create the same resource 5 times
+=============================================================================8 top level block
+
+1-fundamental block
+terraform block
+providers blok
+resources block
+
+2-variables block
+input variables block
+output values block
+local values block
+
+3-calling/referencing block
+data source block
+modules block
