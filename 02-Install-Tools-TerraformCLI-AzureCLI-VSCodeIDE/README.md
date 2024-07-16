@@ -89,7 +89,7 @@ az login
 
 # List Subscriptions
 az account list
-
+az account list -o table
 # Set Specific Subscription (if we have multiple subscriptions)
 az account set --subscription="SUBSCRIPTION_ID"
 ```
