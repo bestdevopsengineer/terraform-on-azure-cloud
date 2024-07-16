@@ -1,0 +1,9 @@
+#terraform init: will create
+.terraform.lock.hcl
+.terraform/ {version of the provider}
+
+#terraform apply:will create
+terraform.tfstate {infos about what we created}
+
+#terraform destroy: will create
+terraform.tfstate.backup
