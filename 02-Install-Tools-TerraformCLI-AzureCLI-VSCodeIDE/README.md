@@ -90,6 +90,8 @@ az login
 # List Subscriptions
 az account list
 az account list -o table
+![image](https://github.com/user-attachments/assets/5223a430-e464-438a-9a13-8bda92f7d113)
+
 # Set Specific Subscription (if we have multiple subscriptions)
 az account set --subscription="SUBSCRIPTION_ID"
 ```
