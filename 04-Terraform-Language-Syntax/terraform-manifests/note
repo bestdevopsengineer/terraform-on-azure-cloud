@@ -1,0 +1,14 @@
+*arguments: feature of the resource
+required (name,location)
+optional (tags)
+
+*attributes: output after the resource is created
+id
+
+*timeout:
+for create that resource the default time out is 1h30min
+
+*import: resource can be imported from cloud to be managed by terraform
+
+*meta-argument:change the behavior of the resource
+count = 5 will create the same resource 5 times
