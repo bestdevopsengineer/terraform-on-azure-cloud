@@ -5,11 +5,11 @@ description: Learn Terraform Commands like init, validate, plan, apply and destr
 
 ## Step-01: Introduction
 - Understand basic Terraform Commands
-1. terraform init
-2. terraform validate
-3. terraform plan
-4. terraform apply
-5. terraform destroy      
+1. terraform init (initialize the directory with the terraform config files  and download the proivders)
+2. terraform validate (validate the syntax of the conf files)
+3. terraform plan (create an execution plan)
+4. terraform apply (apply the changes required to reach the desired state)
+5. terraform destroy  (destroy the infrastructure)    
 
 [![Image](https://stacksimplify.com/course-images/azure-terraform-workflow-1.png "HashiCorp Certified: Terraform Associate on Azure")](https://stacksimplify.com/course-images/azure-terraform-workflow-1.png)
 
