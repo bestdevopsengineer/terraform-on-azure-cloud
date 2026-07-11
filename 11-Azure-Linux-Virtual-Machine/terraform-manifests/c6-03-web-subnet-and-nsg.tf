@@ -69,7 +69,7 @@ resource "azurerm_network_interface" "web_linuxvm_nic" {
     public_ip_address_id = azurerm_public_ip.web_linuxvm_publicip.id
   }
 }
-
+############################################c7-05-web-linuxvm-resource.tf
 locals {
   webvm_custom_data = <<-CUSTOM_DATA
 #!/bin/bash
