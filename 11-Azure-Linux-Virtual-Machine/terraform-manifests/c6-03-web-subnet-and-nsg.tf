@@ -55,7 +55,7 @@ resource "azurerm_public_ip" "web_linuxvm_publicip" {
   sku = "Standard"
   domain_name_label = "app1-vm-${random_string.myrandom.id}"
 }
-
+##############################################c7-03-web-linuxvm-network-interface.tf
 # Resource-2: Create Network Interface
 resource "azurerm_network_interface" "web_linuxvm_nic" {
   name = "${local.resource_name_prefix}-web-linuxvm-nic"
