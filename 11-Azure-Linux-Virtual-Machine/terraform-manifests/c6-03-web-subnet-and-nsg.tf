@@ -45,7 +45,7 @@ resource "azurerm_network_security_rule" "web_nsg_rule_inbound" {
   network_security_group_name = azurerm_network_security_group.web_subnet_nsg.name
 }
 
-
+##############################################c7-02-web-linuxvm-publicip.tf
 # Resource-1: Create Public IP Address
 resource "azurerm_public_ip" "web_linuxvm_publicip" {
   name = "${local.resource_name_prefix}-web-linuxvm-publicip"
