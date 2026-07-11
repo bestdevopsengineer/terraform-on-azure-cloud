@@ -1,3 +1,5 @@
+<img width="975" height="568" alt="image" src="https://github.com/user-attachments/assets/11085b36-0dca-42dd-bcab-0c5fe2fc7676" />
+
 ---
 title: Azure Linux VM using Terraform
 description: Create Azure Linux VM using Terraform
