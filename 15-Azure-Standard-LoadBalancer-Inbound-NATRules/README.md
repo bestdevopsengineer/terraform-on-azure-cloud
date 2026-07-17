@@ -1,36 +1,144 @@
 ---
-title: Azure Load Balancer Inbound NAT Rules using Terraform
-description: Create Azure Standard Load Balancer Inbound NAT Rules using Terraform
+title: Azure Standard Load Balancer using Terraform
+description: Create Azure Standard Load Balancer using Terraform
 ---
-
 ## Step-00: Introduction
-- We are going to create Inbound NAT Rule for Standard Load Balancer in this demo
-1. azurerm_lb_nat_rule
-2. azurerm_network_interface_nat_rule_association
-3. Verify the SSH Connectivity to Web Linux VM using Load Balancer Public IP with port 1022
+- We are going to create Azure Standard Load Balancer Resources as part of this demo.
+1. azurerm_public_ip
+2. azurerm_lb
+3. azurerm_lb_backend_address_pool
+4. azurerm_lb_probe
+5. azurerm_lb_rule
+6. azurerm_network_interface_backend_address_pool_association
+7. Comment Azure Bastion Service as we already using Azure Bastion Host approach with Linux VM
 
-## Step-01: c9-04-web-loadbalancer-inbound-nat-rules.tf
+## Step-01: c9-01-web-loadbalancer-input-variables.tf
 ```t
-# Azure LB Inbound NAT Rule
-resource "azurerm_lb_nat_rule" "web_lb_inbound_nat_rule_22" {
-  name                           = "ssh-1022-vm-22"
-  protocol                       = "Tcp"
-  frontend_port                  = 1022
-  backend_port                   = 22
-  frontend_ip_configuration_name = azurerm_lb.web_lb.frontend_ip_configuration[0].name  
-  resource_group_name            = azurerm_resource_group.rg.name
-  loadbalancer_id                = azurerm_lb.web_lb.id
+# Placeholder file for Load Balancer Input Variables
+```
+
+## Step-02: c9-02-web-loadbalancer-resource.tf
+```t
+# Resource-1: Create Public IP Address for Azure Load Balancer
+resource "azurerm_public_ip" "web_lbpublicip" {
+  name                = "${local.resource_name_prefix}-lbpublicip"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  allocation_method   = "Static"
+  sku = "Standard"
+  tags = local.common_tags
 }
 
-# Associate LB NAT Rule and VM Network Interface
-resource "azurerm_network_interface_nat_rule_association" "web_nic_nat_rule_associate" {
-  network_interface_id  = azurerm_network_interface.web_linuxvm_nic.id
-  ip_configuration_name = azurerm_network_interface.web_linuxvm_nic.ip_configuration[0].name 
-  nat_rule_id           = azurerm_lb_nat_rule.web_lb_inbound_nat_rule_22.id
+# Resource-2: Create Azure Standard Load Balancer
+resource "azurerm_lb" "web_lb" {
+  name                = "${local.resource_name_prefix}-web-lb"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  sku = "Standard"
+  frontend_ip_configuration {
+    name                 = "web-lb-publicip-1"
+    public_ip_address_id = azurerm_public_ip.web_lbpublicip.id
+  }
+}
+ 
+# Resource-3: Create LB Backend Pool
+resource "azurerm_lb_backend_address_pool" "web_lb_backend_address_pool" {
+  name                = "web-backend"
+  loadbalancer_id     = azurerm_lb.web_lb.id
+}
+
+# Resource-4: Create LB Probe
+resource "azurerm_lb_probe" "web_lb_probe" {
+  name                = "tcp-probe"
+  protocol            = "Tcp"
+  port                = 80
+  loadbalancer_id     = azurerm_lb.web_lb.id
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
+# Resource-5: Create LB Rule
+resource "azurerm_lb_rule" "web_lb_rule_app1" {
+  name                           = "web-app1-rule"
+  protocol                       = "Tcp"
+  frontend_port                  = 80
+  backend_port                   = 80
+  frontend_ip_configuration_name = azurerm_lb.web_lb.frontend_ip_configuration[0].name
+  backend_address_pool_id        = azurerm_lb_backend_address_pool.web_lb_backend_address_pool.id 
+  probe_id                       = azurerm_lb_probe.web_lb_probe.id
+  loadbalancer_id                = azurerm_lb.web_lb.id
+  resource_group_name            = azurerm_resource_group.rg.name
+}
+
+
+# Resource-6: Associate Network Interface and Standard Load Balancer
+# https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_interface_backend_address_pool_association
+resource "azurerm_network_interface_backend_address_pool_association" "web_nic_lb_associate" {
+  network_interface_id    = azurerm_network_interface.web_linuxvm_nic.id
+  ip_configuration_name   = azurerm_network_interface.web_linuxvm_nic.ip_configuration[0].name
+  backend_address_pool_id = azurerm_lb_backend_address_pool.web_lb_backend_address_pool.id
 }
 ```
 
-## Step-02: Execute Terraform Commands
+## Step-03: c9-03-web-loadbalancer-outputs.tf
+```t
+# LB Public IP
+output "web_lb_public_ip_address" {
+  description = "Web Load Balancer Public Address"
+  value = azurerm_public_ip.web_lbpublicip.ip_address
+}
+
+# Load Balancer ID
+output "web_lb_id" {
+  description = "Web Load Balancer ID."
+  value = azurerm_lb.web_lb.id 
+}
+
+# Load Balancer Frontend IP Configuration Block
+output "web_lb_frontend_ip_configuration" {
+  description = "Web LB frontend_ip_configuration Block"
+  value = [azurerm_lb.web_lb.frontend_ip_configuration]
+}
+```
+
+## Step-04: c8-04-AzureBastionService.tf
+- Comment Azure Bastion Service which takes longer time to create Resource
+- Also we have the Azure Bastion Host Linux VM for us if required to login to Private VMs
+```t
+/*
+# Azure Bastion Service - Resources
+## Resource-1: Azure Bastion Subnet
+resource "azurerm_subnet" "bastion_service_subnet" {
+  name                 = var.bastion_service_subnet_name
+  resource_group_name  = azurerm_resource_group.rg.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = var.bastion_service_address_prefixes
+}
+
+# Resource-2: Azure Bastion Public IP
+resource "azurerm_public_ip" "bastion_service_publicip" {
+  name                = "${local.resource_name_prefix}-bastion-service-publicip"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+}
+
+# Resource-3: Azure Bastion Service Host
+resource "azurerm_bastion_host" "bastion_host" {
+  name                = "${local.resource_name_prefix}-bastion-service"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  
+  ip_configuration {
+    name                 = "configuration"
+    subnet_id            = azurerm_subnet.bastion_service_subnet.id
+    public_ip_address_id = azurerm_public_ip.bastion_service_publicip.id
+  }
+}
+*/
+```
+
+## Step-05: Execute Terraform Commands
 ```t
 # Terraform Initialize
 terraform init
@@ -45,7 +153,7 @@ terraform plan
 terraform apply -auto-approve
 ```
 
-## Step-03: Verify Resources
+## Step-06: Verify Resources
 ```t
 # Verify Resources - Virtual Network
 1. Azure Resource Group
@@ -105,27 +213,8 @@ http://<LB-Public-IP>
 http://<LB-Public-IP>/app1/index.html
 http://<LB-Public-IP>/app1/metadata.html
 ```
-## Step-04: Verify Inbound NAT Rules for Port 22
-```t
-# Verify Inbound NAT Rules
-ssh -i ssh-keys/terraform-azure.pem -p 1022 azureuser@<LB-Public-IP>
-
-# Sample Output
-Kalyans-Mac-mini:terraform-manifests kalyanreddy$ ssh -i ssh-keys/terraform-azure.pem -p 1022 azureuser@20.62.148.40
-The authenticity of host '[20.62.148.40]:1022 ([20.62.148.40]:1022)' can't be established.
-ECDSA key fingerprint is SHA256:Yeu9uyLui6lzMtBFvmxgy5A3ILfE1oXag6RAgTOH+R8.
-Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
-Warning: Permanently added '[20.62.148.40]:1022' (ECDSA) to the list of known hosts.
-Activate the web console with: systemctl enable --now cockpit.socket
-
-This system is not registered to Red Hat Insights. See https://cloud.redhat.com/
-To register this system, run: insights-client --register
-
-[azureuser@hr-dev-web-linuxvm ~]$ 
-
-```
-
-## Step-04: Delete Resources
+ ssh -i ssh-keys/terraform-azure.pem -p 1022 azureuser@IP-LB
+## Step-07: Delete Resources
 ```t
 # Delete Resources
 terraform destroy 
@@ -135,4 +224,19 @@ terraform apply -destroy -auto-approve
 # Clean-Up Files
 rm -rf .terraform* 
 rm -rf terraform.tfstate*
+```
+
+## Step-08: Additional Cautionary Note
+- When your Linux VM NIC is associated with Security Group, the deletion criteria has issues with Azure Provider
+- Due to that below related errors might come. This is provider related bug. 
+- In our usecase we didn't associate any NSG to VMs directly, we are using subnet level NSG, so this error will not come for us. 
+- Even this error comes when we associate NSG with VM NIC, just go to Azure Portal Console and delete that resource group so that all associated resources will be deleted. 
+```t
+azurerm_public_ip.bastion_host_publicip: Still destroying... [id=/subscriptions/82808767-144c-4c66-a320-...Addresses/hr-dev-bastion-host-publicip, 10s elapsed]
+azurerm_subnet.bastionsubnet: Still destroying... [id=/subscriptions/82808767-144c-4c66-a320-...vnet/subnets/hr-dev-vnet-bastionsubnet, 10s elapsed]
+azurerm_subnet.bastionsubnet: Destruction complete after 10s
+azurerm_public_ip.bastion_host_publicip: Destruction complete after 12s
+╷
+│ Error: Error waiting for removal of Backend Address Pool Association for NIC "hr-dev-linuxvm-nic" (Resource Group "hr-dev-rg"): Code="OperationNotAllowed" Message="Operation 'startTenantUpdate' is not allowed on VM 'hr-dev-linuxvm1' since the VM is marked for deletion. You can only retry the Delete operation (or wait for an ongoing one to complete)." Details=[]
+│
 ```

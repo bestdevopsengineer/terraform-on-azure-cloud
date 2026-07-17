@@ -1,21 +1,50 @@
 # Locals Block for custom data
 locals {
-webvm_custom_data = <<CUSTOM_DATA
-#!/bin/sh
-#sudo yum update -y
-sudo yum install -y httpd
-sudo systemctl enable httpd
-sudo systemctl start httpd  
-sudo systemctl stop firewalld
-sudo systemctl disable firewalld
-sudo chmod -R 777 /var/www/html 
-sudo echo "Welcome to stacksimplify - WebVM App1 - VM Hostname: $(hostname)" > /var/www/html/index.html
-sudo mkdir /var/www/html/app1
-sudo echo "Welcome to stacksimplify - WebVM App1 - VM Hostname: $(hostname)" > /var/www/html/app1/hostname.html
-sudo echo "Welcome to stacksimplify - WebVM App1 - App Status Page" > /var/www/html/app1/status.html
-sudo echo '<!DOCTYPE html> <html> <body style="background-color:rgb(250, 210, 210);"> <h1>Welcome to Stack Simplify - WebVM APP-1 </h1> <p>Terraform Demo</p> <p>Application Version: V1</p> </body></html>' | sudo tee /var/www/html/app1/index.html
-sudo curl -H "Metadata:true" --noproxy "*" "http://169.254.169.254/metadata/instance?api-version=2020-09-01" -o /var/www/html/app1/metadata.html
-CUSTOM_DATA  
+  webvm_custom_data = <<-CUSTOM_DATA
+#!/bin/bash
+
+# Install Apache
+dnf install -y httpd
+
+# Enable and start Apache
+systemctl enable --now httpd
+
+# Configure firewalld
+systemctl enable --now firewalld
+firewall-cmd --permanent --add-service=http
+firewall-cmd --reload
+
+# Create application directory
+mkdir -p /var/www/html/app1
+
+# Home page
+echo "Welcome to StackSimplify - WebVM App1 - VM Hostname: $(hostname)" > /var/www/html/index.html
+
+# Application pages
+echo "Welcome to StackSimplify - WebVM App1 - VM Hostname: $(hostname)" > /var/www/html/app1/hostname.html
+echo "Welcome to StackSimplify - WebVM App1 - App Status Page" > /var/www/html/app1/status.html
+
+cat > /var/www/html/app1/index.html <<EOF
+<!DOCTYPE html>
+<html>
+<head>
+    <title>StackSimplify</title>
+</head>
+<body style="background-color:rgb(250,210,210);">
+    <h1>Welcome to Stack Simplify - WebVM APP-1</h1>
+    <p>Terraform Demo</p>
+    <p>Application Version: V1</p>
+</body>
+</html>
+EOF
+
+# Azure Instance Metadata
+curl -H "Metadata:true" \
+     --noproxy "*" \
+     "http://169.254.169.254/metadata/instance?api-version=2020-09-01" \
+     -o /var/www/html/app1/metadata.html
+
+CUSTOM_DATA
 }
 
 
@@ -37,7 +66,7 @@ resource "azurerm_linux_virtual_machine_scale_set" "web_vmss" {
   source_image_reference {
     publisher = "RedHat"
     offer = "RHEL"
-    sku = "83-gen2"
+    sku = "9-lvm-gen2"
     version = "latest"
   }
 
